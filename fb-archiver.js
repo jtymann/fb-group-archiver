@@ -4,6 +4,7 @@ var util = require('util');
 var config = require('./config.js');
 var rmdir = require('rimraf');
 var graph = require('fbgraph');
+var _ = require('underscore');
 
 if(argv._.length == 1 && argv._[0].toLowerCase() == 'add'){
 	var id = argv.i;
@@ -124,7 +125,7 @@ function fetchPosts(group, callback){
 	];
 
 	if(!group.posts){
-		group.data.posts = {};
+		group.data.posts = [];
 	}
 
 	var newPosts = 0;
@@ -135,9 +136,12 @@ function fetchPosts(group, callback){
 			if(res.paging){
 				//Iterate through any new posts, and add them to the data
 				for(var x=0; x<res.data.length; x++){
-					if(!group.data.posts[res.data[x].id]){
+					var existing = _.find(group.data.posts, function(el){
+						return el.id == res.data[x].id;
+					});
+					if(!existing){
 						newPosts++;
-						group.data.posts[res.data[x].id] = res.data[x];
+						group.data.posts.push(res.data[x]);
 					}
 				}
 
@@ -161,7 +165,7 @@ function getOldestPost(group, callback){
 
 	var base = function(oldest){
 		if(oldest){
-			console.log('Oldest post found, it was create at ' + oldest + '.');
+			console.log('Oldest post found, it was created at ' + oldest + '.');
 		}
 		if(callback){
 			callback(oldest);

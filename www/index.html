@@ -1,14 +1,70 @@
 <!doctype html>
 <html>
   <head>
-    <meta charset="utf-8">
-      <link rel="stylesheet" href="main.css">
+      <link rel="stylesheet" href="main.css" />
   </head>
   <body ng-app="fbArchive">
     <div ng-controller="MainController as main">
 
-      <div ng-repeat="post in posts">
-        {{post.id}} {{post.type}} 
+      <div id="posts" ng-repeat="post in posts | filter:{type: 'photo'}">
+        <div class="post">
+          <div class="header">
+            <a class="avatar_link" href="http://www.facebook.com/{{post.from.id}}" target="_new"><img src="http://graph.facebook.com/{{post.from.id}}/picture?type=square" /></a>
+            <a class="name fb_name" href="http://www.facebook.com/{{post.from.id}}" target="_new">{{post.from.name}}</a>
+            <a class="date" href="http://www.facebook.com/{{post.id}}" target="_new">
+              <abbr title="{{post.created_time | date:&quot;EEEE, MMMM d, y 'at' h:mma&quot;}}">
+                {{post.created_time | date:'mediumDate'}}
+              </abbr>
+            </a>
+          </div>
+
+          <div ng-if="(post.type == 'status')">
+            <div class="message">{{post.message}}</div>
+            <div class="story">{{post.story}}</div>
+          </div>
+
+          <div ng-if="post.type == 'photo'">
+            <div class="message">{{post.message}}</div>
+            <a href="{{post.link}}" target="_new"><img src="{{post.picture}}" /></a>
+          </div>
+          
+          <div ng-if="post.type == 'video'">
+            <div class="message">{{post.message}}</div>
+            <ng-video-preview source="youtube" url="http://youtu.be/VEUfscdqpNg"></ng-video-preview>
+            <!--<iframe width="560" height="315" src="{{post.source}}" frameborder="0" allowfullscreen></iframe>-->
+            <a href="#" target="_new"><img src="{{post.picture}}" /></a>
+          </div>
+          
+          <div ng-if="post.type == 'link'">
+            <a href="#" target="_new"><img src="{{post.picture}}" /></a>
+          </div>
+
+          <div ng-if="(post.type != 'photo') && (post.type != 'status')"> {{post.id}} {{post.type}} </div>
+          <div class="social">
+            <span class="likes">Likes (??)</span> <span class="likes">Comments (??) <span class="likes">Share
+          </div>
+
+          <div class="comments">
+            <div class="comment">
+              <a class="comment_avatar_link" href="http://www.facebook.com/{{post.from.id}}" target="_new"><img src="http://graph.facebook.com/{{post.from.id}}/picture?type=square" /></a>
+              <div class="comment_text">
+                <a class="name fb_name" href="http://www.facebook.com/{{post.from.id}}" target="_new">{{post.from.name}}</a>
+                This would be a comment
+              </div>
+              
+              <div class="comment_data">
+                <a class="date" href="http://www.facebook.com/{{post.id}}" target="_new">
+                  <abbr title="{{post.created_time | date:&quot;EEEE, MMMM d, y 'at' h:mma&quot;}}">
+                    Likes (??) Replies (??) {{post.created_time | date:'mediumDate'}}
+                  </abbr>
+                </a>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
     </div>
