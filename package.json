@@ -1,0 +1,27 @@
+{
+  "name": "fb-group-archiver",
+  "version": "1.0.0",
+  "description": "A tool used to backup facebook groups. Also allows for easier browsing of fb groups.",
+  "main": "fb-archiver.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jtymann/fb-group-archiver.git"
+  },
+  "author": "James Tymann",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jtymann/fb-group-archiver/issues"
+  },
+  "homepage": "https://github.com/jtymann/fb-group-archiver#readme",
+  "dependencies": {
+    "dateformat": "^1.0.12",
+    "express": "^4.13.4",
+    "fbgraph": "^1.1.0",
+    "minimist": "^1.2.0",
+    "rimraf": "^2.5.2"
+  }
+}
