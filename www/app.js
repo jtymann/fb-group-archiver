@@ -4,6 +4,8 @@ angular.module('fbArchive', [])
   .run(function ($rootScope, $location, $window) {
 
 
+  }).config(function() {
+
   }).controller('MainController', function($scope, $location, $http) {
   	var groupId = window.location.search.split("=")[1];
 
@@ -16,5 +18,9 @@ angular.module('fbArchive', [])
 	    // called asynchronously if an error occurs
 	    // or server returns response with an error status.
 	  });
+
+	$scope.isYouTube = function(url){
+		return true;
+	};
 
   });

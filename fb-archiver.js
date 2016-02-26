@@ -4,6 +4,8 @@ var util = require('util');
 var config = require('./config.js');
 var rmdir = require('rimraf');
 var graph = require('fbgraph');
+var _ = require('underscore');
+var request = require('request');
 
 if(argv._.length == 1 && argv._[0].toLowerCase() == 'add'){
 	var id = argv.i;
@@ -96,12 +98,15 @@ function fetchPosts(group, callback){
 		'call_to_action',
 		'caption',
 		'created_time',
+		'comments',
 		'description',
 		'feed_targeting',
 		'from',
+		'full_picture',
 		'icon',
 		'is_hidden',
 		'is_published',
+		'likes',
 		'link',
 		'message',
 		'message_tags',
@@ -124,7 +129,7 @@ function fetchPosts(group, callback){
 	];
 
 	if(!group.posts){
-		group.data.posts = {};
+		group.data.posts = [];
 	}
 
 	var newPosts = 0;
@@ -135,9 +140,13 @@ function fetchPosts(group, callback){
 			if(res.paging){
 				//Iterate through any new posts, and add them to the data
 				for(var x=0; x<res.data.length; x++){
-					if(!group.data.posts[res.data[x].id]){
+					var existing = _.find(group.data.posts, function(el){
+						return el.id == res.data[x].id;
+					});
+					if(!existing){
 						newPosts++;
-						group.data.posts[res.data[x].id] = res.data[x];
+						var post = saveContent(group, res.data[x]);
+						group.data.posts.push(post);
 					}
 				}
 
@@ -155,13 +164,41 @@ function fetchPosts(group, callback){
 	search(group.id + '/feed?limit=100&until=' + group.data.until + '&fields=' + JSON.stringify(postFields));
 }
 
+function saveContent(group, post){
+	try{
+		fs.mkdirSync('www/groups/'+group.id+'/images');
+	}catch(error){} //Error just means it exists, so squelch it. If we can't create it, we will encounter write errors elsewhere.
+
+	if(post.full_picture){
+		download(post.full_picture, 'www/groups/'+group.id+'/images/post_' + post.id + '_full_picture.png', function(){
+		  process.stdout.write("#");
+		});
+		post.full_picture_local = 'post_' + post.id + '_full_picture.png';
+	}
+
+	if(post.picture){
+		download(post.picture, 'www/groups/'+group.id+'/images/post_' + post.id + '_picture.png', function(){
+		  process.stdout.write("#");
+		});
+		post.picture_local = 'post_' + post.id + '__picture.png';
+	}
+
+	return post;
+}
+
+var download = function(uri, filename, callback){
+  request.head(uri, function(err, res, body){
+    request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
+  });
+};
+
 function getOldestPost(group, callback){
 	console.log("Beginning scan for oldest post.");
 	var oldest = false;
 
 	var base = function(oldest){
 		if(oldest){
-			console.log('Oldest post found, it was create at ' + oldest + '.');
+			console.log('Oldest post found, it was created at ' + oldest + '.');
 		}
 		if(callback){
 			callback(oldest);

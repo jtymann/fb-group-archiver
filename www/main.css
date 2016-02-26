@@ -1,1 +1,139 @@
-main.css
+body{
+	background-color: rgb(233, 234, 237);
+	font-family: helvetica, arial, sans-serif;
+	font-size: 14px;
+}
+
+.fb_name{
+	color: #3b5998;
+	cursor: pointer;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+.fb_name:hover{
+	text-decoration: underline;
+}
+
+.clearfix:after { 
+   content: " ";
+   display: block; 
+   height: 0; 
+   clear: both;
+}
+
+#posts {
+    width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+.post{
+	width: 100%;
+	margin: 16px 0;
+	color: #141823;
+	background-color: rgb(255, 255, 255);
+	border: 1px solid;
+	border-color: #e5e6e9 #dfe0e4 #d0d1d5;
+	border-radius: 3px;
+	padding: 10px;
+	position: relative;
+}
+
+.post.photo_post {
+    padding: 0;
+}
+
+.post .header{
+	position: relative;
+	height: 50px;
+}
+
+.post .header img{
+	position: absolute;
+	height: 40px;
+	width: 40px;
+}
+
+.post .header>.name{
+	font-size: 14px;
+	margin-left: 50px;
+	padding-top: 5px;
+	display: block;
+}
+.post .header>.name:hover, .post .header>.date:hover{
+	text-decoration: underline;
+}
+
+.post .header>.date, .post .header>.location{
+	color: #9197a3;
+	cursor: pointer;
+	text-decoration: none;
+	font-size: 12px;
+	margin-left: 50px;
+	padding-top: 4px;
+	display: block;
+}
+
+.post .social{
+	border-top: 1px solid #e5e5e5;
+	border-bottom: 1px solid #e5e5e5;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	color: #7f7f7f;
+	font-weight: bold;
+	margin-top: 10px;
+	margin-bottom: 5px;
+}
+
+.post .comments{
+    background-color: #f6f7f8;
+    position: relative;
+    left: -10px;
+    padding-left: 10px;
+    margin-right: -19px;
+}
+
+.post .comment{
+	margin-top: 5px;
+	min-height: 32px;
+}
+
+.post .comment .comment_text{
+	margin-left: 37px;
+	padding-top: 3px;
+	font-size: 12px;
+}
+
+.post .comment .comment_data{
+	margin-left: 37px;
+	margin: 5px 0 3px 37px;
+	font-size: 12px;
+}
+
+.post .comments .comment .comment_avatar_link>img{
+	height: 32px;
+	width: 32px;
+	position: absolute;
+}
+
+.post.photo_post .media_display{
+	background-color: #000;
+	width: 700px;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	float: left;
+}
+
+.post.photo_post .media_display img{
+	flex-shrink:0;
+	min-width: 100%;
+	min-height:100%
+}
+
+.post.photo_post .media_discussion{
+	float: right;
+	width: 300px;
+}

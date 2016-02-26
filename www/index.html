@@ -1,14 +1,165 @@
 <!doctype html>
 <html>
   <head>
-    <meta charset="utf-8">
-      <link rel="stylesheet" href="main.css">
+      <link rel="stylesheet" href="main.css" />
   </head>
   <body ng-app="fbArchive">
     <div ng-controller="MainController as main">
 
-      <div ng-repeat="post in posts">
-        {{post.id}} {{post.type}} 
+      <div id="posts" class="clearfix" ng-repeat="post in posts">
+        
+        <div class="post status_post clearfix" ng-if="(post.type == 'status')">
+          <div class="header">
+            <a class="avatar_link" href="http://www.facebook.com/{{post.from.id}}" target="_new"><img src="http://graph.facebook.com/{{post.from.id}}/picture?type=square" /></a>
+            <a class="name fb_name" href="http://www.facebook.com/{{post.from.id}}" target="_new">{{post.from.name}}</a>
+            <a class="date" href="http://www.facebook.com/{{post.id}}" target="_new">
+              <abbr title="{{post.created_time | date:&quot;EEEE, MMMM d, y 'at' h:mma&quot;}}">
+                {{post.created_time | date:'mediumDate'}}
+              </abbr>
+            </a>
+          </div>
+
+          <div>
+            <div class="message">{{post.message}}</div>
+            <div class="story">{{post.story}}</div>
+          </div>
+              
+          <div class="social">
+            <span class="likes">Likes ({{post.likes.data.length ? post.likes.data.length : 0}})</span> <span class="likes">Comments ({{post.comments.data.length ? post.comments.data.length : 0}}) <span class="likes">Share
+          </div>
+
+          <div class="comments">
+            <div class="comment">
+              <a class="comment_avatar_link" href="http://www.facebook.com/{{post.from.id}}" target="_new"><img src="http://graph.facebook.com/{{post.from.id}}/picture?type=square" /></a>
+              <div class="comment_text">
+                <a class="name fb_name" href="http://www.facebook.com/{{post.from.id}}" target="_new">{{post.from.name}}</a>
+                This would be a comment
+              </div>
+
+              <div class="comment_data">
+                <a class="date" href="http://www.facebook.com/{{post.id}}" target="_new">
+                  <abbr title="{{post.created_time | date:&quot;EEEE, MMMM d, y 'at' h:mma&quot;}}">
+                    Likes (??) Replies (??) {{post.created_time | date:'mediumDate'}}
+                  </abbr>
+                </a>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <div class="post photo_post clearfix" ng-if="(post.type == 'photo')">
+          <div class="media_display">
+            <a href="http://www.facebook.com/photo.php?fbid={{post.object_id}}" target="_new"><img src="{{post.full_picture}}" /></a>
+          </div>
+
+          <div class="media_discussion">
+            <div class="header">
+              <a class="avatar_link" href="http://www.facebook.com/{{post.from.id}}" target="_new"><img src="http://graph.facebook.com/{{post.from.id}}/picture?type=square" /></a>
+              <a class="name fb_name" href="http://www.facebook.com/{{post.from.id}}" target="_new">{{post.from.name}}</a>
+              <a class="date" href="http://www.facebook.com/{{post.id}}" target="_new">
+                <abbr title="{{post.created_time | date:&quot;EEEE, MMMM d, y 'at' h:mma&quot;}}">
+                  {{post.created_time | date:'mediumDate'}}
+                </abbr>
+              </a>
+            </div>
+
+            <div>
+              <div class="message">{{post.message}}</div>
+              <div class="story">{{post.story}}</div>
+            </div>
+
+            <div class="social">
+              <span class="likes">Likes (??)</span> <span class="likes">Comments (??) <span class="likes">Share
+            </div>
+
+            <div class="comments">
+              <div class="comment">
+                <a class="comment_avatar_link" href="http://www.facebook.com/{{post.from.id}}" target="_new"><img src="http://graph.facebook.com/{{post.from.id}}/picture?type=square" /></a>
+                <div class="comment_text">
+                  <a class="name fb_name" href="http://www.facebook.com/{{post.from.id}}" target="_new">{{post.from.name}}</a>
+                  This would be a comment
+                </div>
+
+                <div class="comment_data">
+                  <a class="date" href="http://www.facebook.com/{{post.id}}" target="_new">
+                    <abbr title="{{post.created_time | date:&quot;EEEE, MMMM d, y 'at' h:mma&quot;}}">
+                      Likes (??) Replies (??) {{post.created_time | date:'mediumDate'}}
+                    </abbr>
+                  </a>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="post photo_post clearfix" ng-if="(post.type == 'video')">
+          <div class="media_display">
+            <a href="#" target="_new"><img src="{{post.full_picture}}" /></a>
+          </div>
+
+          <div class="media_discussion">
+            <div class="header">
+              <a class="avatar_link" href="http://www.facebook.com/{{post.from.id}}" target="_new"><img src="http://graph.facebook.com/{{post.from.id}}/picture?type=square" /></a>
+              <a class="name fb_name" href="http://www.facebook.com/{{post.from.id}}" target="_new">{{post.from.name}}</a>
+              <a class="date" href="http://www.facebook.com/{{post.id}}" target="_new">
+                <abbr title="{{post.created_time | date:&quot;EEEE, MMMM d, y 'at' h:mma&quot;}}">
+                  {{post.created_time | date:'mediumDate'}}
+                </abbr>
+              </a>
+            </div>
+
+            <div>
+              <div class="message">{{post.message}}</div>
+              <div class="story">{{post.story}}</div>
+            </div>
+
+            <div class="social">
+              <span class="likes">Likes (??)</span> <span class="likes">Comments (??) <span class="likes">Share
+            </div>
+
+            <div class="comments">
+              <div class="comment">
+                <a class="comment_avatar_link" href="http://www.facebook.com/{{post.from.id}}" target="_new"><img src="http://graph.facebook.com/{{post.from.id}}/picture?type=square" /></a>
+                <div class="comment_text">
+                  <a class="name fb_name" href="http://www.facebook.com/{{post.from.id}}" target="_new">{{post.from.name}}</a>
+                  This would be a comment
+                </div>
+
+                <div class="comment_data">
+                  <a class="date" href="http://www.facebook.com/{{post.id}}" target="_new">
+                    <abbr title="{{post.created_time | date:&quot;EEEE, MMMM d, y 'at' h:mma&quot;}}">
+                      Likes (??) Replies (??) {{post.created_time | date:'mediumDate'}}
+                    </abbr>
+                  </a>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <div class="post" ng-if="(post.type != 'photo') && (post.type != 'status') && (post.type != 'video')">
+          <pre style="max-height: 400px; overflow: auto;">{{post | json}}</pre>
+        </div>
+
       </div>
 
     </div>
