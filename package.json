@@ -23,6 +23,7 @@
     "fbgraph": "^1.1.0",
     "minimist": "^1.2.0",
     "request": "^2.69.0",
-    "rimraf": "^2.5.2"
+    "rimraf": "^2.5.2",
+    "underscore": "^1.8.3"
   }
 }
