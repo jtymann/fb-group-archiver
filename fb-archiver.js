@@ -53,7 +53,14 @@ if(argv._.length == 1 && argv._[0].toLowerCase() == 'add'){
 	if(id){
 
 		var group = JSON.parse(fs.readFileSync('www/groups/'+id+'/group.json', 'utf8'));
-		var dataString = fs.readFileSync('www/groups/'+group.id+'/data.json', 'utf8');
+		var dataString = '{}';
+
+		try{
+			fs.readFileSync('www/groups/'+group.id+'/data.json', 'utf8');
+		} catch(error) {
+			
+		}
+
 		graph.setAccessToken(group.token);
 		group.data = {};
 		if(dataString){
