@@ -58,7 +58,7 @@ if(argv._.length == 1 && argv._[0].toLowerCase() == 'add'){
 		try{
 			fs.readFileSync('www/groups/'+group.id+'/data.json', 'utf8');
 		} catch(error) {
-			
+
 		}
 
 		graph.setAccessToken(group.token);
@@ -146,20 +146,48 @@ function fetchPosts(group, callback){
 		graph.get(url, function(err, res){
 			if(res.paging){
 				//Iterate through any new posts, and add them to the data
-				for(var x=0; x<res.data.length; x++){
-					var existing = _.find(group.data.posts, function(el){
-						return el.id == res.data[x].id;
-					});
-					if(!existing){
-						newPosts++;
-						var post = saveContent(group, res.data[x]);
-						group.data.posts.push(post);
+				var x=-1;
+				var itr = function(){
+					x++;
+					if(x >= res.data.length){
+						search(res.paging.previous);
+					} else {
+						var existing = _.find(group.data.posts, function(el){
+							return el.id == res.data[x].id;
+						});
+
+						if(!existing){
+							newPosts++;
+							var post = saveContent(group, res.data[x]);
+							
+							getAllComments(post, function(post, err){
+								if(err){
+									console.log("Error getting comments for post " + post.id, err);
+								}
+
+								getAllLikes(post, function(post, err){
+									if(err){
+										console.log("Error getting likes for post " + post.id, err);
+									}
+									updateLikeNameCache(group, post, function(igroup, post, err){
+										if(err){
+											console.log("Error getting like names for post " + post.id, err);
+										}
+										group = igroup;
+										group.data.posts.push(post);
+										itr();
+									});
+								});	
+							});
+						}else{
+							itr();
+						}
 					}
 				}
 
+				itr();
 				//Grab the new until index and save that
 
-				search(res.paging.previous);
 			}else{
 				console.log('\nFinished saving new posts for group: ' + group.id + '. ' + newPosts + ' new posts found.');
 				callback(group);
@@ -169,6 +197,109 @@ function fetchPosts(group, callback){
 	}
 
 	search(group.id + '/feed?limit=100&until=' + group.data.until + '&fields=' + JSON.stringify(postFields));
+}
+
+function getAllComments(post, callback){
+	if(post.comments == undefined){
+		post.comments = [];
+		callback(post);
+	} else {
+		var pagination = post.comments.paging;
+		var comment_data = post.comments.data;
+		post.comments = comment_data;
+
+		var fetch = function(next){
+			graph.get(next, function(err, res){
+					if(err){
+						callback(post, err);
+					} else {
+						comment_data = comment_data.concat(res.data);
+						post.comments = comment_data;
+
+						if(res.paging.next){
+							fetch(res.paging.next);
+						} else {
+							callback(post);
+						}
+					}
+			});
+		};
+
+		if(pagination.next){
+			fetch(pagination.next);
+		} else {
+			callback(post);
+		}
+	}
+}
+
+function getAllLikes(post, callback){
+	if(post.likes == undefined){
+		post.likes = [];
+		callback(post);
+	} else {
+		var pagination = post.likes.paging;
+		var like_data = post.likes.data;
+		post.likes = like_data;
+
+		var fetch = function(next){
+			graph.get(next, function(err, res){
+					if(err){
+						callback(post, err);
+					} else {
+						like_data = like_data.concat(res.data);
+						post.likes = like_data;
+
+						if(res.paging.next){
+							fetch(res.paging.next);
+						} else {
+							callback(post);
+						}
+					}
+			});
+		};
+
+		if(pagination.next){
+			fetch(pagination.next);
+		} else {
+			callback(post);
+		}
+	}
+}
+
+function updateLikeNameCache(group, post, callback){
+
+	if(group.data.likeNameCache == undefined){
+		group.data.likeNameCache = [];
+	}
+
+	var x=-1;
+	var itr = function(){
+		x++;
+		if(x >= post.likes.length){
+			callback(group, post);
+		}	else {
+			var id = post.likes[x].id;
+			var existing = _.find(group.data.likeNameCache, function(el){
+				return el.id == id;
+			});
+
+			if(existing){
+				itr();
+			} else {
+				graph.get(id, function(err, res){
+					if(err){
+						callback(group, post, err);
+					} else {
+						group.data.likeNameCache.push(res);
+						itr();
+					}
+				});
+			}
+		}
+	}
+
+	itr();
 }
 
 function saveContent(group, post){
