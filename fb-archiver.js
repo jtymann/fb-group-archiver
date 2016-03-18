@@ -3,9 +3,11 @@ var fs = require('fs');
 var util = require('util');
 var config = require('./config.js');
 var rmdir = require('rimraf');
-var graph = require('fbgraph');
 var _ = require('underscore');
 var request = require('request');
+var graph = require('fbgraph');
+var fbtool = require('./fbtool.js');
+var Q = require('Q');
 
 if(argv._.length == 1 && argv._[0].toLowerCase() == 'add'){
 	var id = argv.i;
@@ -51,7 +53,6 @@ if(argv._.length == 1 && argv._[0].toLowerCase() == 'add'){
 	var id = argv.i;
 
 	if(id){
-
 		var group = JSON.parse(fs.readFileSync('www/groups/'+id+'/group.json', 'utf8'));
 		var dataString = '{}';
 
@@ -61,27 +62,7 @@ if(argv._.length == 1 && argv._[0].toLowerCase() == 'add'){
 
 		}
 
-		graph.setAccessToken(group.token);
-		group.data = {};
-		if(dataString){
-			group.data = JSON.parse(dataString);
-		}
-
-		if(!group.data.until){
-			getOldestPost(group, function(oldest){
-				if(oldest){
-					group.data.until = oldest;
-					fetchPosts(group,saveGroupData);
-				}else{
-					console.log("Error: Failed to find the oldest group post.");
-				}
-			});
-		}else{
-			fetchPosts(group,saveGroupData);
-		}
-
-		/**/
-
+		archiveGroupData(group);
 	}else{
 		usage();
 	}
@@ -89,114 +70,90 @@ if(argv._.length == 1 && argv._[0].toLowerCase() == 'add'){
 	usage();
 }
 
+function archiveGroupData(group){
+	Q.when()
+	.then(
+		function(){ return fbtool.setAccessToken(group); }
+	).then(
+		//Fetch oldest post
+		function(){ return fbtool.getOldestPost(group); }
+	).then(
+		//Fetch all posts
+		function(){ return fbtool.fetchPosts(group); }
+	).then(
+		function(){
+			console.log('Querying each post for additional post data (Comments, Likes, Photos, etc)');
+
+			try{
+				fs.mkdirSync('www/groups/'+group.id+'/images');
+			}catch(error){} //Error just means it exists, so squelch it. If we can't create it, we will encounter write errors elsewhere.
+
+			var chain = Q.when();
+			_.forEach(group.data.posts, function(el, i, a){
+				chain = chain.then( function(){ return fbtool.fetchPostAttributes(el, i, group); } );
+			});
+			chain = chain.then(function(){
+				return Q.Promise(function(resolve){
+					console.log('\nFinished Querying for additional post data.');
+					resolve();
+				});
+			});
+			return chain;
+		}
+	).then(
+		function(){
+			console.log('Querying each comment for additional comment data (Replies, Likes, Photos, etc)');
+
+			var chain = Q.when();
+			_.forEach(group.data.posts, function(post, pindex, parray){
+				_.forEach(post.comments, function(comment, cindex, carray){
+					chain = chain.then( function(){ return fbtool.fetchCommentAttributes(comment, cindex, group); } );
+				});
+			});
+			chain = chain.then(function(){
+				return Q.Promise(function(resolve){
+					console.log('\nFinished Querying for additional comment data.');
+					resolve();
+				});
+			});
+			return chain;
+		}
+	).then(
+		function(){
+			console.log('Querying each reply for additional reply data (Likes, Photos, etc)');
+
+			var chain = Q.when();
+			_.forEach(group.data.posts, function(post, pindex, parray){
+				_.forEach(post.comments, function(comment, cindex, carray){
+					_.forEach(comment.comments, function(reply, rindex, rarray){
+						chain = chain.then( function(){ return fbtool.fetchCommentAttributes(reply, rindex, group); } );
+					});
+				});
+			});
+			chain = chain.then(function(){
+				return Q.Promise(function(resolve){
+					console.log('\nFinished Querying for additional reply data.');
+					resolve();
+				});
+			});
+			return chain;
+		}
+	).then(
+		function(){ 
+			var promise = function(resolve, reject, notify){
+				saveGroupData(group);
+				console.log("Finished Archiving");
+				resolve();
+			}
+			return Q.Promise(promise);
+		}
+	);
+}
+
 function saveGroupData(group){
 	var fd = fs.openSync('www/groups/'+group.id+'/data.json', 'w');
 	fs.writeSync(fd,JSON.stringify(group.data));
 	fs.closeSync(fd);
-}
-
-function fetchPosts(group, callback){
-	console.log('Fetching new posts for group: ' + group.id);
-
-	var postFields = [
-		'id',
-		'admin_creator',
-		'application',
-		'call_to_action',
-		'caption',
-		'created_time',
-		'comments',
-		'description',
-		'feed_targeting',
-		'from',
-		'full_picture',
-		'icon',
-		'is_hidden',
-		'is_published',
-		'likes',
-		'link',
-		'message',
-		'message_tags',
-		'name',
-		'object_id',
-		'picture',
-		'place',
-		'privacy',
-		'properties',
-		'shares',
-		'source',
-		'status_type',
-		'story',
-		'story_tags',
-		'targeting',
-		'to',
-		'type',
-		'updated_time',
-		'with_tags'
-	];
-
-	if(!group.posts){
-		group.data.posts = [];
-	}
-
-	var newPosts = 0;
-
-	var search = function(url){
-		process.stdout.write("#");
-		graph.get(url, function(err, res){
-			if(res.paging){
-				//Iterate through any new posts, and add them to the data
-				var x=-1;
-				var itr = function(){
-					x++;
-					if(x >= res.data.length){
-						search(res.paging.previous);
-					} else {
-						var existing = _.find(group.data.posts, function(el){
-							return el.id == res.data[x].id;
-						});
-
-						if(!existing){
-							newPosts++;
-							var post = saveContent(group, res.data[x]);
-							
-							getAllComments(post, function(post, err){
-								if(err){
-									console.log("Error getting comments for post " + post.id, err);
-								}
-
-								getAllLikes(post, function(post, err){
-									if(err){
-										console.log("Error getting likes for post " + post.id, err);
-									}
-									updateLikeNameCache(group, post, function(igroup, post, err){
-										if(err){
-											console.log("Error getting like names for post " + post.id, err);
-										}
-										group = igroup;
-										group.data.posts.push(post);
-										itr();
-									});
-								});	
-							});
-						}else{
-							itr();
-						}
-					}
-				}
-
-				itr();
-				//Grab the new until index and save that
-
-			}else{
-				console.log('\nFinished saving new posts for group: ' + group.id + '. ' + newPosts + ' new posts found.');
-				callback(group);
-			}
-
-		});
-	}
-
-	search(group.id + '/feed?limit=100&until=' + group.data.until + '&fields=' + JSON.stringify(postFields));
 }
 
 function getAllComments(post, callback){
@@ -231,135 +188,6 @@ function getAllComments(post, callback){
 			callback(post);
 		}
 	}
-}
-
-function getAllLikes(post, callback){
-	if(post.likes == undefined){
-		post.likes = [];
-		callback(post);
-	} else {
-		var pagination = post.likes.paging;
-		var like_data = post.likes.data;
-		post.likes = like_data;
-
-		var fetch = function(next){
-			graph.get(next, function(err, res){
-					if(err){
-						callback(post, err);
-					} else {
-						like_data = like_data.concat(res.data);
-						post.likes = like_data;
-
-						if(res.paging.next){
-							fetch(res.paging.next);
-						} else {
-							callback(post);
-						}
-					}
-			});
-		};
-
-		if(pagination.next){
-			fetch(pagination.next);
-		} else {
-			callback(post);
-		}
-	}
-}
-
-function updateLikeNameCache(group, post, callback){
-
-	if(group.data.likeNameCache == undefined){
-		group.data.likeNameCache = [];
-	}
-
-	var x=-1;
-	var itr = function(){
-		x++;
-		if(x >= post.likes.length){
-			callback(group, post);
-		}	else {
-			var id = post.likes[x].id;
-			var existing = _.find(group.data.likeNameCache, function(el){
-				return el.id == id;
-			});
-
-			if(existing){
-				itr();
-			} else {
-				graph.get(id, function(err, res){
-					if(err){
-						callback(group, post, err);
-					} else {
-						group.data.likeNameCache.push(res);
-						itr();
-					}
-				});
-			}
-		}
-	}
-
-	itr();
-}
-
-function saveContent(group, post){
-	try{
-		fs.mkdirSync('www/groups/'+group.id+'/images');
-	}catch(error){} //Error just means it exists, so squelch it. If we can't create it, we will encounter write errors elsewhere.
-
-	if(post.full_picture){
-		download(post.full_picture, 'www/groups/'+group.id+'/images/post_' + post.id + '_full_picture.png', function(){
-		  process.stdout.write("#");
-		});
-		post.full_picture_local = 'post_' + post.id + '_full_picture.png';
-	}
-
-	if(post.picture){
-		download(post.picture, 'www/groups/'+group.id+'/images/post_' + post.id + '_picture.png', function(){
-		  process.stdout.write("#");
-		});
-		post.picture_local = 'post_' + post.id + '__picture.png';
-	}
-
-	return post;
-}
-
-var download = function(uri, filename, callback){
-  request.head(uri, function(err, res, body){
-    request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
-  });
-};
-
-function getOldestPost(group, callback){
-	console.log("Beginning scan for oldest post.");
-	var oldest = false;
-
-	var base = function(oldest){
-		if(oldest){
-			console.log('Oldest post found, it was created at ' + oldest + '.');
-		}
-		if(callback){
-			callback(oldest);
-		}
-	}
-
-	var search = function(url, callback){
-		graph.get(url, function(err, res){
-			if(res.paging && res.paging.next){
-				oldest = res.paging.next;
-				setTimeout(function(){
-					search(res.paging.next);
-				}, 1000);
-			}else{
-
-				oldest = oldest.split("until=")[1];
-				base(oldest);
-			}
-		});
-	}
-
-	search(group.id + '/feed?limit=500&fields=["id"]');
-
 }
 
 function usage(){

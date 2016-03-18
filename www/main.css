@@ -2,6 +2,14 @@ body{
 	background-color: rgb(233, 234, 237);
 	font-family: helvetica, arial, sans-serif;
 	font-size: 14px;
+	margin: 0;
+}
+
+#header{
+	background-image: url("fbsprites.png");
+	height: 48px;
+	width: 100%;
+	background-position-y: -49px;
 }
 
 .fb_name{
@@ -26,7 +34,6 @@ body{
     width: 1000px;
     margin-left: auto;
     margin-right: auto;
-    width: 100%;
 }
 
 .post{
